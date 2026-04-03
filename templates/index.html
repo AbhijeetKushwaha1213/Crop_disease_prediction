@@ -1,0 +1,499 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>🌾 Crop Disease Prediction</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            min-height: 100vh;
+            background: linear-gradient(135deg, #0f172a 0%, #1e3a2f 50%, #0f2027 100%);
+            color: #e2e8f0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 560px;
+            width: 100%;
+        }
+
+        /* ── Header ── */
+        .header {
+            text-align: center;
+            margin-bottom: 32px;
+        }
+
+        .header .icon {
+            font-size: 48px;
+            margin-bottom: 12px;
+            display: block;
+        }
+
+        .header h1 {
+            font-size: 28px;
+            font-weight: 700;
+            background: linear-gradient(135deg, #4ade80, #22d3ee);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .header p {
+            color: #94a3b8;
+            margin-top: 8px;
+            font-size: 15px;
+        }
+
+        /* ── Card ── */
+        .card {
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 20px;
+            padding: 32px;
+            backdrop-filter: blur(20px);
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.4);
+        }
+
+        /* ── Upload Zone ── */
+        .upload-zone {
+            border: 2px dashed rgba(74, 222, 128, 0.3);
+            border-radius: 16px;
+            padding: 40px 20px;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .upload-zone:hover {
+            border-color: #4ade80;
+            background: rgba(74, 222, 128, 0.05);
+            transform: translateY(-2px);
+        }
+
+        .upload-zone.drag-over {
+            border-color: #4ade80;
+            background: rgba(74, 222, 128, 0.1);
+            box-shadow: 0 0 30px rgba(74, 222, 128, 0.15);
+        }
+
+        .upload-zone .upload-icon {
+            font-size: 40px;
+            margin-bottom: 12px;
+            display: block;
+        }
+
+        .upload-zone p {
+            color: #94a3b8;
+            font-size: 14px;
+        }
+
+        .upload-zone p strong {
+            color: #4ade80;
+        }
+
+        .upload-zone input[type="file"] {
+            position: absolute;
+            inset: 0;
+            opacity: 0;
+            cursor: pointer;
+        }
+
+        /* ── Preview ── */
+        .preview-section {
+            display: none;
+            margin-top: 20px;
+            text-align: center;
+        }
+
+        .preview-section img {
+            max-width: 100%;
+            max-height: 220px;
+            border-radius: 12px;
+            border: 2px solid rgba(255, 255, 255, 0.1);
+            object-fit: cover;
+        }
+
+        .file-name {
+            font-size: 13px;
+            color: #94a3b8;
+            margin-top: 8px;
+        }
+
+        /* ── Button ── */
+        .predict-btn {
+            display: none;
+            width: 100%;
+            margin-top: 24px;
+            padding: 14px;
+            border: none;
+            border-radius: 12px;
+            background: linear-gradient(135deg, #059669, #10b981);
+            color: white;
+            font-family: 'Inter', sans-serif;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            letter-spacing: 0.3px;
+        }
+
+        .predict-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 25px rgba(16, 185, 129, 0.35);
+        }
+
+        .predict-btn:active {
+            transform: translateY(0);
+        }
+
+        .predict-btn:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        /* ── Loading Spinner ── */
+        .spinner {
+            display: none;
+            margin: 20px auto 0;
+            width: 40px;
+            height: 40px;
+            border: 3px solid rgba(74, 222, 128, 0.2);
+            border-top-color: #4ade80;
+            border-radius: 50%;
+            animation: spin 0.7s linear infinite;
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+
+        /* ── Results ── */
+        .results {
+            display: none;
+            margin-top: 24px;
+        }
+
+        .result-main {
+            background: linear-gradient(135deg, rgba(16, 185, 129, 0.15), rgba(6, 95, 70, 0.2));
+            border: 1px solid rgba(16, 185, 129, 0.3);
+            border-radius: 14px;
+            padding: 24px;
+            text-align: center;
+            margin-bottom: 16px;
+        }
+
+        .result-main .disease-label {
+            font-size: 12px;
+            text-transform: uppercase;
+            letter-spacing: 1.5px;
+            color: #4ade80;
+            font-weight: 600;
+        }
+
+        .result-main .disease-name {
+            font-size: 22px;
+            font-weight: 700;
+            margin: 8px 0;
+            color: #f0fdf4;
+        }
+
+        .result-main .confidence-bar-wrapper {
+            background: rgba(0, 0, 0, 0.3);
+            border-radius: 100px;
+            height: 10px;
+            margin-top: 12px;
+            overflow: hidden;
+        }
+
+        .result-main .confidence-bar {
+            height: 100%;
+            border-radius: 100px;
+            background: linear-gradient(90deg, #059669, #4ade80);
+            transition: width 0.8s cubic-bezier(0.22, 1, 0.36, 1);
+            width: 0%;
+        }
+
+        .result-main .confidence-text {
+            font-size: 14px;
+            color: #86efac;
+            margin-top: 8px;
+            font-weight: 500;
+        }
+
+        /* ── Top 3 list ── */
+        .top-list {
+            list-style: none;
+        }
+
+        .top-list li {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 12px 16px;
+            border-radius: 10px;
+            margin-bottom: 6px;
+            background: rgba(255, 255, 255, 0.03);
+            border: 1px solid rgba(255, 255, 255, 0.06);
+            transition: background 0.2s;
+        }
+
+        .top-list li:hover {
+            background: rgba(255, 255, 255, 0.06);
+        }
+
+        .top-list .rank {
+            width: 26px;
+            height: 26px;
+            border-radius: 8px;
+            background: rgba(74, 222, 128, 0.12);
+            color: #4ade80;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 12px;
+            font-weight: 700;
+            margin-right: 12px;
+            flex-shrink: 0;
+        }
+
+        .top-list .name {
+            flex: 1;
+            font-size: 14px;
+            color: #cbd5e1;
+        }
+
+        .top-list .conf {
+            font-size: 14px;
+            font-weight: 600;
+            color: #4ade80;
+            flex-shrink: 0;
+        }
+
+        /* ── Error ── */
+        .error-msg {
+            display: none;
+            margin-top: 20px;
+            padding: 14px 18px;
+            border-radius: 12px;
+            background: rgba(239, 68, 68, 0.12);
+            border: 1px solid rgba(239, 68, 68, 0.3);
+            color: #fca5a5;
+            font-size: 14px;
+            text-align: center;
+        }
+
+        /* ── Reset link ── */
+        .reset-link {
+            display: none;
+            text-align: center;
+            margin-top: 16px;
+        }
+
+        .reset-link a {
+            color: #94a3b8;
+            font-size: 13px;
+            text-decoration: none;
+            transition: color 0.2s;
+        }
+
+        .reset-link a:hover {
+            color: #4ade80;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <!-- Header -->
+        <div class="header">
+            <span class="icon">🌿</span>
+            <h1>Crop Disease Prediction</h1>
+            <p>Upload a leaf image to detect diseases instantly</p>
+        </div>
+
+        <!-- Card -->
+        <div class="card">
+            <!-- Upload Zone -->
+            <div class="upload-zone" id="uploadZone">
+                <span class="upload-icon">📷</span>
+                <p><strong>Click to upload</strong> or drag & drop</p>
+                <p style="margin-top: 4px; font-size: 12px;">JPG, JPEG, PNG — Max 10MB</p>
+                <input type="file" id="fileInput" accept="image/jpeg,image/png,image/jpg">
+            </div>
+
+            <!-- Image Preview -->
+            <div class="preview-section" id="previewSection">
+                <img id="previewImage" alt="Preview">
+                <div class="file-name" id="fileName"></div>
+            </div>
+
+            <!-- Predict Button -->
+            <button class="predict-btn" id="predictBtn" onclick="submitPrediction()">
+                🔍 Predict Disease
+            </button>
+
+            <!-- Spinner -->
+            <div class="spinner" id="spinner"></div>
+
+            <!-- Results -->
+            <div class="results" id="results">
+                <div class="result-main">
+                    <div class="disease-label">Detected Disease</div>
+                    <div class="disease-name" id="diseaseName">—</div>
+                    <div class="confidence-bar-wrapper">
+                        <div class="confidence-bar" id="confidenceBar"></div>
+                    </div>
+                    <div class="confidence-text" id="confidenceText">—</div>
+                </div>
+                <ul class="top-list" id="topList"></ul>
+            </div>
+
+            <!-- Error -->
+            <div class="error-msg" id="errorMsg"></div>
+
+            <!-- Reset -->
+            <div class="reset-link" id="resetLink">
+                <a href="#" onclick="resetForm(); return false;">↻ Upload another image</a>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // ── Elements ──
+        const uploadZone  = document.getElementById('uploadZone');
+        const fileInput   = document.getElementById('fileInput');
+        const previewSec  = document.getElementById('previewSection');
+        const previewImg  = document.getElementById('previewImage');
+        const fileNameEl  = document.getElementById('fileName');
+        const predictBtn  = document.getElementById('predictBtn');
+        const spinner     = document.getElementById('spinner');
+        const resultsDiv  = document.getElementById('results');
+        const errorMsg    = document.getElementById('errorMsg');
+        const resetLink   = document.getElementById('resetLink');
+
+        let selectedFile = null;
+
+        // ── Drag & drop ──
+        uploadZone.addEventListener('dragover', e => {
+            e.preventDefault();
+            uploadZone.classList.add('drag-over');
+        });
+        uploadZone.addEventListener('dragleave', () => {
+            uploadZone.classList.remove('drag-over');
+        });
+        uploadZone.addEventListener('drop', e => {
+            e.preventDefault();
+            uploadZone.classList.remove('drag-over');
+            if (e.dataTransfer.files.length) {
+                fileInput.files = e.dataTransfer.files;
+                handleFile(e.dataTransfer.files[0]);
+            }
+        });
+
+        // ── File selected ──
+        fileInput.addEventListener('change', e => {
+            if (e.target.files.length) handleFile(e.target.files[0]);
+        });
+
+        function handleFile(file) {
+            selectedFile = file;
+            const reader = new FileReader();
+            reader.onload = e => {
+                previewImg.src = e.target.result;
+                previewSec.style.display = 'block';
+                fileNameEl.textContent = file.name;
+                predictBtn.style.display = 'block';
+                resultsDiv.style.display = 'none';
+                errorMsg.style.display = 'none';
+                resetLink.style.display = 'none';
+            };
+            reader.readAsDataURL(file);
+        }
+
+        // ── Submit prediction ──
+        async function submitPrediction() {
+            if (!selectedFile) return;
+
+            predictBtn.disabled = true;
+            predictBtn.textContent = '⏳ Analyzing...';
+            spinner.style.display = 'block';
+            resultsDiv.style.display = 'none';
+            errorMsg.style.display = 'none';
+
+            const formData = new FormData();
+            formData.append('file', selectedFile);
+
+            try {
+                const res = await fetch('/predict', { method: 'POST', body: formData });
+                const data = await res.json();
+
+                if (!res.ok) throw new Error(data.detail || 'Prediction failed');
+
+                showResults(data.prediction);
+            } catch (err) {
+                errorMsg.textContent = '❌ ' + err.message;
+                errorMsg.style.display = 'block';
+            } finally {
+                spinner.style.display = 'none';
+                predictBtn.disabled = false;
+                predictBtn.textContent = '🔍 Predict Disease';
+                resetLink.style.display = 'block';
+            }
+        }
+
+        // ── Display results ──
+        function showResults(pred) {
+            document.getElementById('diseaseName').textContent =
+                pred.disease.replaceAll('_', ' ');
+            document.getElementById('confidenceText').textContent =
+                pred.confidence.toFixed(1) + '% confidence';
+
+            // animate bar
+            const bar = document.getElementById('confidenceBar');
+            bar.style.width = '0%';
+            requestAnimationFrame(() => {
+                setTimeout(() => { bar.style.width = pred.confidence + '%'; }, 50);
+            });
+
+            // top 3
+            const list = document.getElementById('topList');
+            list.innerHTML = '';
+            pred.top_3.forEach((item, i) => {
+                const li = document.createElement('li');
+                li.innerHTML = `
+                    <span class="rank">${i + 1}</span>
+                    <span class="name">${item.disease.replaceAll('_', ' ')}</span>
+                    <span class="conf">${item.confidence.toFixed(1)}%</span>
+                `;
+                list.appendChild(li);
+            });
+
+            resultsDiv.style.display = 'block';
+        }
+
+        // ── Reset ──
+        function resetForm() {
+            selectedFile = null;
+            fileInput.value = '';
+            previewSec.style.display = 'none';
+            predictBtn.style.display = 'none';
+            resultsDiv.style.display = 'none';
+            errorMsg.style.display = 'none';
+            resetLink.style.display = 'none';
+        }
+    </script>
+</body>
+</html>
