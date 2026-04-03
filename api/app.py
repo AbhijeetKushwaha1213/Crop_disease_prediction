@@ -204,10 +204,10 @@ async def predict_disease(file: UploadFile = File(...)):
             detail="File too large. Maximum size is 10MB."
         )
     
-    # Save uploaded image (optional, for history)
-    save_path = UPLOAD_DIR / file.filename
-    with open(save_path, "wb") as f:
-        f.write(image_bytes)
+    # Save uploaded image (removed for Vercel: Vercel has read-only filesystem)
+    # save_path = UPLOAD_DIR / file.filename
+    # with open(save_path, "wb") as f:
+    #     f.write(image_bytes)
     
     # Run prediction
     try:
