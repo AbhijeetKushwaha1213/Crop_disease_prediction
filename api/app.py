@@ -46,9 +46,12 @@ try:
     import tensorflow as tf
     interpreter = tf.lite.Interpreter(model_path=str(MODEL_PATH))
 except ImportError:
-    # Fallback: try tflite_runtime (lighter package)
-    from tflite_runtime.interpreter import Interpreter
-    interpreter = Interpreter(model_path=str(MODEL_PATH))
+    try:
+        from ai_edge_litert.interpreter import Interpreter
+        interpreter = Interpreter(model_path=str(MODEL_PATH))
+    except ImportError:
+        from tflite_runtime.interpreter import Interpreter
+        interpreter = Interpreter(model_path=str(MODEL_PATH))
 
 interpreter.allocate_tensors()
 
